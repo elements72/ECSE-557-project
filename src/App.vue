@@ -5,6 +5,7 @@
       <input class="btn" type="file" accept=".csv" @change="handleFileUpload( $event )"/>
       <TransformationsPanel @undo-transformation="undoTransformation" @apply-transformation="applyTransformation" class="" v-if="parsed" :displayed="displayed" :fields="fields"></TransformationsPanel>
       <CsvViewer class="mt-5" v-if="parsed" :displayed="displayed_transformed" :fields="fields_transformed"> </CsvViewer>
+      <input class="btn" type="btn" @click="exportCsv( $event )" value="Export"/>
   </div>
 </template>
 
@@ -51,10 +52,14 @@ export default {
       drop(field){
         const index = this.fields_transformed.indexOf(field);
         this.fields_transformed.splice(index, 1);
-        console.log(this.fields_transformed)
+        this.fields_removed.push(field)
       },
 
       dropUndo(field){
+        // Remove the field from the removed ones
+        const index = this.fields_removed.indexOf(field);
+        this.fields_removed.splice(index, 1);
+
         this.fields_transformed.push(field);
       },
 
@@ -78,6 +83,20 @@ export default {
             break;
         }
       },
+      exportCsv(){
+        let exportContent = structuredClone(this.content)
+        for (const key in this.fields_removed) {
+          let index = exportContent.meta.fields.indexOf(key)
+          exportContent.meta.fields.splice(index)
+        }
+        var csv = Papa.unparse(exportContent);
+        var csvData = new Blob([csv], {type: 'text/csv;charset=utf-8;'});
+        var csvURL = window.URL.createObjectURL(csvData);
+        var testLink = document.createElement('a');
+        testLink.href = csvURL;
+        testLink.setAttribute('test', 'test.csv');
+        testLink.click();
+      }
   },
   data() {
       return {
@@ -88,7 +107,9 @@ export default {
           fields: [],
           transformed: [],
           fields_transformed: [],
-          displayed_transformed: []
+          displayed_transformed: [],
+          // Removed fields
+          fields_removed: []
       }
     }
 }
