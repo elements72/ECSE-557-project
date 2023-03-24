@@ -27,11 +27,11 @@ export default {
         }
         return parsed_type
       },
-      applyTransformation(transformation, field){
-        this.$emit("apply-transformation", transformation, field)
+      applyTransformation(transformation, field, n_characters){
+        this.$emit("apply-transformation", transformation, field, n_characters)
       },
-      undoTransformation(transformation, field){
-        this.$emit("undo-transformation", transformation, field)
+      undoTransformation(transformation, field, n_characters){
+        this.$emit("undo-transformation", transformation, field, n_characters)
       }
     },
   props:{
@@ -53,7 +53,6 @@ export default {
       current.field = this.fields[idx]
       this.meta.push(current)
     }
-    console.log(this.meta)
   }
 }
 </script>

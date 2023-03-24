@@ -9,6 +9,10 @@
             <option value="Drop" selected>Drop</option>
             <option :value=trans v-for="(trans, index) in chooseTransormation()" v-bind:key="index">{{ trans }}</option>
             </select>
+            <div v-if="selected === 'End cropping' || selected === 'Start cropping'">
+              <label for="n_characters">Number of characters</label>
+              <input type="number" id="n_characters" min="1" v-model="n_characters" :disabled="applied">
+            </div>
         </div>
         <div class="col-3">
             <button type="button" :disabled="applied" @click="applyTransformation()" class="btn btn-primary mb-2 col">Apply</button>
@@ -38,11 +42,11 @@ export default {
       },
       applyTransformation(){
           this.applied = true
-          this.$emit("apply-transformation", this.selected, this.field);
+          this.$emit("apply-transformation", this.selected, this.field, this.n_characters);
       },
       undoTransformation(){
           this.applied = false
-          this.$emit("undo-transformation", this.selected, this.field);
+          this.$emit("undo-transformation", this.selected, this.field, this.n_characters);
       }
 
     },
@@ -57,7 +61,8 @@ export default {
         float_transformations: ["Rounding"],
         current_type: String,
         applied: false,
-        selected: "Drop"
+        selected: "Drop",
+        n_characters: 1
     }
   },
   created(){
