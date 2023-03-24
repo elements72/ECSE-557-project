@@ -3,7 +3,8 @@
       <h1 class="h1">Anonymizer tool 1.0</h1>
       <CsvViewer class="mt-5" v-if="parsed" :displayed="displayed" :fields="fields"> </CsvViewer>
       <input class="btn" type="file" accept=".csv" @change="handleFileUpload( $event )"/>
-      <TransformationsPanel class="" v-if="parsed" :displayed="displayed" :fields="fields"></TransformationsPanel>
+      <TransformationsPanel @undo-transformation="undoTransformation" @apply-transformation="applyTransformation" class="" v-if="parsed" :displayed="displayed" :fields="fields"></TransformationsPanel>
+      <CsvViewer class="mt-5" v-if="parsed" :displayed="displayed_transformed" :fields="fields_transformed"> </CsvViewer>
   </div>
 </template>
 
@@ -29,9 +30,12 @@ export default {
           complete: function( results ){
               this.content = results;
               this.displayed =  this.shuffle_select(5)
-              console.log(this.displayed)
               this.fields = this.content.meta.fields
-              this.parsed = true;
+              this.parsed = true
+              this.transformed = this.content
+              // Make a copy of the original data
+              this.displayed_transformed = structuredClone(this.displayed)
+              this.fields_transformed = structuredClone(this.fields)
           }.bind(this)
         } );
       },
@@ -43,6 +47,37 @@ export default {
       this.file = event.target.files[0];
       this.parseFile();
       },
+
+      drop(field){
+        const index = this.fields_transformed.indexOf(field);
+        this.fields_transformed.splice(index, 1);
+        console.log(this.fields_transformed)
+      },
+
+      dropUndo(field){
+        this.fields_transformed.push(field);
+      },
+
+
+      applyTransformation(transformation, field){
+        switch (transformation) {
+          case "Drop":
+            this.drop(field)
+            break;
+          default:
+            break;
+        }
+      },
+
+      undoTransformation(transformation, field){
+        switch (transformation) {
+          case "Drop":
+            this.dropUndo(field)
+            break;
+          default:
+            break;
+        }
+      },
   },
   data() {
       return {
@@ -50,7 +85,10 @@ export default {
           content: [],
           parsed: false,
           displayed: [],
-          fields: []
+          fields: [],
+          transformed: [],
+          fields_transformed: [],
+          displayed_transformed: []
       }
     }
 }

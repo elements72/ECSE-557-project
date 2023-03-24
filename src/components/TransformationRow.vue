@@ -5,14 +5,14 @@
             <label class="sr-only">{{ field }}</label>
         </div>
         <div class="form-group col-4">
-            <select class="form-select" >
-            <option>Drop</option>
-            <option v-for="(trans, index) in chooseTransormation()" v-bind:key="index">{{ trans }}</option>
+            <select class="form-select" v-model="selected" :disabled="applied">
+            <option value="Drop" selected>Drop</option>
+            <option :value=trans v-for="(trans, index) in chooseTransormation()" v-bind:key="index">{{ trans }}</option>
             </select>
         </div>
         <div class="col-3">
-            <button type="button" class="btn btn-primary mb-2 col">Apply</button>
-            <button type="button" class="btn btn-danger mb-2 col ml-2">Undo</button>
+            <button type="button" :disabled="applied" @click="applyTransformation()" class="btn btn-primary mb-2 col">Apply</button>
+            <button type="button" :disabled="!applied" @click="undoTransformation()" class="btn btn-danger mb-2 col ml-2">Undo</button>
         </div>
         </form>        
   </div>
@@ -35,7 +35,16 @@ export default {
         else {
             return this.float_transformations
         }
-    }
+      },
+      applyTransformation(){
+          this.applied = true
+          this.$emit("apply-transformation", this.selected, this.field);
+      },
+      undoTransformation(){
+          this.applied = false
+          this.$emit("undo-transformation", this.selected, this.field);
+      }
+
     },
   props:{
       field: String,
@@ -47,11 +56,12 @@ export default {
         int_transformations: ["Rounding", "Grouping"],
         float_transformations: ["Rounding"],
         current_type: String,
+        applied: false,
+        selected: "Drop"
     }
   },
   created(){
     this.current_type = this.type
-    console.log("Field in row " + this.field)
   }
 }
 </script>

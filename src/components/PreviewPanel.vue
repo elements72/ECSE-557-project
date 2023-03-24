@@ -1,7 +1,7 @@
 <template>
   <div>
     <div class="container mt-1" >
-          <TransformationRow @undo-transformation="undoTransformation"  @apply-transformation="applyTransformation" v-for="(m, index) in meta" v-bind:key="index" :field="m.field" :type="m.type" ></TransformationRow>
+          <TransformationRow v-for="(m, index) in meta" v-bind:key="index" :field="m.field" :type="m.type" ></TransformationRow>
     </div>
   </div>
 </template>
@@ -26,12 +26,6 @@ export default {
           parsed_type = "string"
         }
         return parsed_type
-      },
-      applyTransformation(transformation, field){
-        this.$emit("apply-transformation", transformation, field)
-      },
-      undoTransformation(transformation, field){
-        this.$emit("undo-transformation", transformation, field)
       }
     },
   props:{
@@ -40,9 +34,8 @@ export default {
   },
   data(){
     return{
-      types: [],
-      // Contains informations about the name of the field and the inferred type
-      meta: []
+      displayed: [],
+      fiedl: []
     }
   },
   created(){
@@ -51,6 +44,7 @@ export default {
       let current = {}
       current.type = this.inferType(this.displayed["0"][this.fields[idx]])
       current.field = this.fields[idx]
+      console.log(current)
       this.meta.push(current)
     }
     console.log(this.meta)
