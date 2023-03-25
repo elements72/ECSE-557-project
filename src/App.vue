@@ -159,7 +159,7 @@ export default {
             this.grouping_applied.splice(idx, 1)
           }
         }
-        for (const idx of this.displayed_transformed) {
+        for (const idx in this.displayed_transformed) {
           this.displayed_transformed[idx][field] = this.displayed[idx][field]
         }
       },
@@ -176,7 +176,7 @@ export default {
             this.rounding_applied.splice(idx, 1)
           }
         }
-        for (const idx of this.displayed_transformed) {
+        for (const idx in this.displayed_transformed) {
           this.displayed_transformed[idx][field] = this.displayed[idx][field]
         }
       },
