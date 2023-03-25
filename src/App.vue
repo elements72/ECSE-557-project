@@ -113,13 +113,20 @@ export default {
         let min = minMax.min
         let max = minMax.max
 
+        console.log(min.toString())
+        min = parseInt(this.zeroReplace(min.toString()))
+
         numOfBuckets = Math.ceil((max - min) / interval)
+
+        console.log("MIN: ", min)
+        console.log("Max ", max)
+        console.log("NumOfBuckets ", numOfBuckets)
 
         // Set up the first bin
         bins.push({
             binNum: binCount,
             minNum: min,
-            maxNum: interval,
+            maxNum: min + interval,
             count: 0
         })
         binCount++
@@ -147,7 +154,8 @@ export default {
             if(item >= bin.minNum && item <= bin.maxNum){
               bin.count++;
               // TODO - do not display the real number - just for testing purposes
-              data[i][field] = `${bin.minNum}<${item}<=${bin.maxNum}`
+              //data[i][field] = `${bin.minNum}<${item}<=${bin.maxNum}`
+              data[i][field] = `${bin.minNum}-${bin.maxNum}`
               break;  // An item can only be in one bin.
             }
           }  
@@ -181,16 +189,20 @@ export default {
         }
       },
 
-      powerRounding(data, field){
-        for (let idx in data) {
-          let counter = 0
-          for (let i = 1; i < data[idx][field].length; i++) {
-            if(data[idx][field][i] == ',')
+      zeroReplace(value){
+        let counter = 0
+          for (let i = 1; i < value.length; i++) {
+            if(value[i] == ',')
               break
             else
               counter++
           }
-           data[idx][field] =  data[idx][field][0] + "0".repeat(counter)
+           return value[0] + "0".repeat(counter)
+        },
+
+      powerRounding(data, field){
+        for (let idx in data) {
+          data[idx][field] = this.zeroReplace(data[idx][field])
         }
       },
 
