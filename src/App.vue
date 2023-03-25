@@ -55,16 +55,27 @@ export default {
         this.fields_removed.push(field)
       },
 
+      insertAt(array, index, ...elementsArray) {
+        array.splice(index, 0, ...elementsArray);
+      },
+
       dropUndo(field){
+        let idx_feature
+        for (const idx in this.fields_removed) {
+          if (this.fields_removed[idx]["field"] == field){
+            idx_feature = this.fields_removed[idx]["idx"]
+            this.fields_removed.splice(idx, 1)
+            break;
+          }
+        }
         // Remove the field from the removed ones
         const index = this.fields_removed.indexOf(field);
         this.fields_removed.splice(index, 1);
-
-        this.fields_transformed.push(field);
+        console.log("Inserting at index ", idx_feature  )
+        this.insertAt(this.fields_transformed, idx_feature, field);
       },
 
       cropping(data, field, n_characters, start){
-        console.log("Cropping ", field)
         if (start){
           for (const element of data) {
             element[field] = element[field].substring(n_characters, element[field].length)
@@ -113,14 +124,9 @@ export default {
         let min = minMax.min
         let max = minMax.max
 
-        console.log(min.toString())
         min = parseInt(this.zeroReplace(min.toString()))
 
         numOfBuckets = Math.ceil((max - min) / interval)
-
-        console.log("MIN: ", min)
-        console.log("Max ", max)
-        console.log("NumOfBuckets ", numOfBuckets)
 
         // Set up the first bin
         bins.push({
@@ -141,7 +147,6 @@ export default {
           })
           binCount++;
         }
-          console.log("Bins: ", bins)
         return bins
       },
 
@@ -221,6 +226,8 @@ export default {
       applyTransformation(transformation, field, size){
         switch (transformation) {
           case "Drop":
+            console.log(this.fields.indexOf(field))
+            this.fields_removed.push({"field": field, "idx": this.fields.indexOf(field)})
             this.drop(field)
             break;
           case "Start cropping":
@@ -282,7 +289,6 @@ export default {
           let index = exportContent.meta.fields.indexOf(key)
           exportContent.meta.fields.splice(index)
         }
-        console.log(exportContent.data)
         // Apply cropping
         console.log(this.cropping_applied)
         for (const cropping of this.cropping_applied) {
