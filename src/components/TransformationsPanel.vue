@@ -27,11 +27,11 @@ export default {
         }
         return parsed_type
       },
-      applyTransformation(transformation, field, n_characters){
-        this.$emit("apply-transformation", transformation, field, n_characters)
+      applyTransformation(transformation, field, size){
+        this.$emit("apply-transformation", transformation, field, size)
       },
-      undoTransformation(transformation, field, n_characters){
-        this.$emit("undo-transformation", transformation, field, n_characters)
+      undoTransformation(transformation, field, size){
+        this.$emit("undo-transformation", transformation, field, size)
       }
     },
   props:{

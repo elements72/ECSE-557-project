@@ -37,7 +37,6 @@ export default {
               // Make a copy of the original data
               this.displayed_transformed = structuredClone(this.displayed)
               this.fields_transformed = structuredClone(this.fields)
-              console.log(this.content)
           }.bind(this)
         } );
       },
@@ -89,19 +88,152 @@ export default {
         }
       },
 
-      applyTransformation(transformation, field, n_characters){
+      findMinMax(data, field) {
+        let min = Infinity
+        let max = - Infinity
+        for (const element of data){
+          let value = parseFloat(element[field]) 
+          if(value < min){
+            min = value
+          }
+          else if (value > max){
+            max = value
+          }
+        }
+        return {"min": min, "max": max}
+      },
+      // Create the bins for grouping transformation
+      createBins(data, field, interval) {
+        let bins = [];
+        let binCount = 0;
+        let numOfBuckets;
+        interval = parseInt(interval)
+
+        let minMax = this.findMinMax(data, field)
+        let min = minMax.min
+        let max = minMax.max
+
+        numOfBuckets = Math.ceil((max - min) / interval)
+
+        // Set up the first bin
+        bins.push({
+            binNum: binCount,
+            minNum: min,
+            maxNum: interval,
+            count: 0
+        })
+        binCount++
+        //Setup Bins
+        for(let i = 1; i < numOfBuckets; i += 1){
+          let minNum = bins[i-1].maxNum
+          bins.push({
+            binNum: binCount,
+            minNum: minNum,
+            maxNum: minNum + interval,
+            count: 0
+          })
+          binCount++;
+        }
+          console.log("Bins: ", bins)
+        return bins
+      },
+
+      grouping(data, field, bins){
+        //Loop through data and add to bin's count
+        for (var i = 0; i < data.length; i++){
+          var item = data[i][field];
+          for (var j = 0; j < bins.length; j++){
+            var bin = bins[j];
+            if(item >= bin.minNum && item <= bin.maxNum){
+              bin.count++;
+              // TODO - do not display the real number - just for testing purposes
+              data[i][field] = `${bin.minNum}<${item}<=${bin.maxNum}`
+              break;  // An item can only be in one bin.
+            }
+          }  
+        }
+      },
+      undoGrouping(field){
+        for (const idx in this.grouping_applied) {
+          if (this.grouping_applied[idx]["field"] == field){
+            this.grouping_applied.splice(idx, 1)
+          }
+        }
+        for (const idx of this.displayed_transformed) {
+          this.displayed_transformed[idx][field] = this.displayed[idx][field]
+        }
+      },
+
+      rounding(data, field, precision){
+        for (let element of data) {
+          element[field] = Math.round(parseFloat(element[field]), precision)
+        }
+      },
+
+      undoRounding(field){
+        for (const idx in this.rounding_applied) {
+          if (this.rounding_applied[idx]["field"] == field){
+            this.rounding_applied.splice(idx, 1)
+          }
+        }
+        for (const idx of this.displayed_transformed) {
+          this.displayed_transformed[idx][field] = this.displayed[idx][field]
+        }
+      },
+
+      powerRounding(data, field){
+        for (let idx in data) {
+          let counter = 0
+          for (let i = 1; i < data[idx][field].length; i++) {
+            if(data[idx][field][i] == ',')
+              break
+            else
+              counter++
+          }
+           data[idx][field] =  data[idx][field][0] + "0".repeat(counter)
+        }
+      },
+
+      undoPowerRounding(field){
+        for (const idx in this.power_rounding_applied) {
+          if (this.power_rounding_applied[idx]["field"] == field){
+            this.power_rounding_applied.splice(idx, 1)
+          }
+        }
+        for (const idx in this.displayed_transformed) {
+          this.displayed_transformed[idx][field] = this.displayed[idx][field]
+        }
+      },
+
+
+      applyTransformation(transformation, field, size){
         switch (transformation) {
           case "Drop":
             this.drop(field)
             break;
           case "Start cropping":
-            this.cropping_applied.push({"field": field, "n_characters": n_characters, "start": true})
-            this.cropping(this.displayed_transformed, field, n_characters, true)
-            break;
+            this.cropping_applied.push({"field": field, "n_characters": size, "start": true})
+            this.cropping(this.displayed_transformed, field, size, true)
+            break;  
           case "End cropping":
-            this.cropping_applied.push({"field": field, "n_characters": n_characters, "start": false})
-            this.cropping(this.displayed_transformed, field, n_characters, false)
+            this.cropping_applied.push({"field": field, "n_characters": size, "start": false})
+            this.cropping(this.displayed_transformed, field, size, false)
             break
+          case "Grouping": {
+            // Create the bins
+            let bins = this.createBins(this.content.data, field, size)
+            this.grouping_applied.push({"field": field, "bins": bins})
+            this.grouping(this.displayed_transformed, field, bins)
+            break;
+          }
+          case "Rounding":
+            this.rounding_applied.push({"field": field, "precision": size})
+            this.rounding(this.displayed_transformed, field, size)
+            break;
+          case "Power rounding":
+            this.power_rounding_applied.push({"field": field})
+            this.powerRounding(this.displayed_transformed, field, size)
+            break;
           default:
             break;
         }
@@ -118,12 +250,22 @@ export default {
           case "End cropping":
             this.undoCropping(field)
             break;
+          case "Grouping":
+            this.undoGrouping(field)
+            break;
+          case "Rounding":
+            this.undoRounding(field)
+            break;
+          case "Power rounding":
+            this.undoPowerRounding(field)
+            break;
           default:
             break;
         }
       },
       exportCsv(){
         let exportContent = structuredClone(this.content)
+        // Apply droppping
         for (const key in this.fields_removed) {
           let index = exportContent.meta.fields.indexOf(key)
           exportContent.meta.fields.splice(index)
@@ -134,6 +276,22 @@ export default {
         for (const cropping of this.cropping_applied) {
           this.cropping(exportContent.data, cropping.field, cropping.n_characters, cropping.start)
         }
+
+        // Apply grouping
+        for (const grouping of this.grouping_applied) {
+          this.grouping(exportContent.data, grouping.field, grouping.bins)
+        }
+
+        // Apply rounding
+        for (const round of this.rounding_applied) {
+          this.rounding(exportContent.data, round.field, round.precision)
+        }
+
+        // Apply power rounding
+        for (const round of this.power_rounding_applied) {
+          this.powerRounding(exportContent.data, round.field)
+        }
+
         var csv = Papa.unparse(exportContent);
         var csvData = new Blob([csv], {type: 'text/csv;charset=utf-8;'});
         var csvURL = window.URL.createObjectURL(csvData);
@@ -155,7 +313,14 @@ export default {
           displayed_transformed: [],
           // Removed fields
           fields_removed: [],
-          cropping_applied: []
+          // Cropping applied
+          cropping_applied: [],
+          // Groupig applied
+          grouping_applied: [],
+          // Rounding applied
+          rounding_applied: [],
+          // Rounding applied
+          power_rounding_applied: []
       }
     }
 }
